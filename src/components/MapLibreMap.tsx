@@ -4,13 +4,16 @@ import {
   type RequestTransformFunction,
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { RMap, useMap, RPopup } from 'maplibre-react-components';
+import { RLayer, RMap, RSource, useMap, RPopup } from 'maplibre-react-components';
 import { getHoydeFromPunkt } from '../api/getHoydeFromPunkt';
 import { getAdresserFromSearchText } from '../api/getAdresserFromSearchText';
+import { getBygningAtPunkt } from '../api/getBygningAtPunkt';
 import { useEffect, useState } from 'react';
 import { Overlay } from './Overlay';
 import { SearchBar, type Address } from './SearchBar';
 import DrawComponent from './DrawComponent';
+
+import type { GeoJSON } from 'geojson';
 
 const TRONDHEIM_COORDS: [number, number] = [10.40565401, 63.4156575];
 
@@ -41,12 +44,30 @@ export const MapLibreMap = () => {
     console.log(pointHoyde, clickPoint);
   }, [clickPoint, pointHoyde]);
 
+  const [bygningsOmriss, setBygningsOmriss] = useState<GeoJSON | undefined>(undefined);
 
   const onMapClick = async (e: MapLayerMouseEvent) => {
     const hoyder = await getHoydeFromPunkt(e.lngLat.lng, e.lngLat.lat);
     setPointHoydeAtPunkt(hoyder[0].Z);
     setClickPoint(new LngLat(e.lngLat.lng, e.lngLat.lat));
+    
+    const bygningResponse = await getBygningAtPunkt(e.lngLat.lng, e.lngLat.lat)
+    console.log(bygningResponse)
+    
+    if (bygningResponse?.FkbData?.BygningsOmriss) {
+        const geoJsonObject = JSON.parse(bygningResponse.FkbData.BygningsOmriss);
+        setBygningsOmriss(geoJsonObject);
+        console.log(geoJsonObject);
+
+    } else {
+        setBygningsOmriss(undefined);
+    }
   };
+
+  const polygonStyle = {
+    "fill-outline-color": "rgba(0,0,0,0.1)",
+    "fill-color":  "rgba(18, 94, 45, 0.41)"
+  }
 
   return (
     <RMap
@@ -79,7 +100,20 @@ export const MapLibreMap = () => {
           lat={address.PayLoad.Posisjon.Y}
         />
       )}
+      
+      {bygningsOmriss &&
+         <>
+            <RSource id="bygning" type="geojson" data={bygningsOmriss} />
+            <RLayer
+               source="bygning"
+               id="bygning-fill"
+               type="fill"
+               paint={polygonStyle}
+            />
+         </>
+      }
       <DrawComponent />
+      
     </RMap>
   );
 };
