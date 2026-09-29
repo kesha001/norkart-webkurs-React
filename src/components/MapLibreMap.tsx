@@ -6,8 +6,10 @@ import {
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { RMap, useMap, RPopup } from 'maplibre-react-components';
 import { getHoydeFromPunkt } from '../api/getHoydeFromPunkt';
+import { getAdresserFromSearchText } from '../api/getAdresserFromSearchText';
 import { useEffect, useState } from 'react';
 import { Overlay } from './Overlay';
+import { SearchBar, type Address } from './SearchBar';
 import DrawComponent from './DrawComponent';
 
 const TRONDHEIM_COORDS: [number, number] = [10.40565401, 63.4156575];
@@ -33,9 +35,12 @@ export const MapLibreMap = () => {
   );
   const [clickPoint, setClickPoint] = useState<LngLat | undefined>(undefined);
 
+  const [address, setAddress] = useState<Address | null>(null); // <--- Legg til dette!
+
   useEffect(() => {
     console.log(pointHoyde, clickPoint);
   }, [clickPoint, pointHoyde]);
+
 
   const onMapClick = async (e: MapLayerMouseEvent) => {
     const hoyder = await getHoydeFromPunkt(e.lngLat.lng, e.lngLat.lat);
@@ -58,10 +63,22 @@ export const MapLibreMap = () => {
       <Overlay>
         <h2>Dette er et overlay</h2>
         <p>Legg til funksjonalitet knyttet til kartet.</p>
+        <SearchBar setAddress={setAddress}/> 
       </Overlay>
-      <RPopup longitude={clickPoint?.lng} latitude={clickPoint?.lat}>
-        {clickPoint?.lng}, {clickPoint?.lat}, {pointHoyde}
-      </RPopup>
+      {
+        clickPoint && (
+          <RPopup longitude={clickPoint?.lng} latitude={clickPoint?.lat}>
+          {clickPoint?.lng}, {clickPoint?.lat}, {pointHoyde}
+        </RPopup>
+        )
+      }
+        
+      {address && (
+        <MapFlyTo
+          lng={address.PayLoad.Posisjon.X}
+          lat={address.PayLoad.Posisjon.Y}
+        />
+      )}
       <DrawComponent />
     </RMap>
   );
