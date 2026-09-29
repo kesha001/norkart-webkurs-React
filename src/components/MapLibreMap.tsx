@@ -52,17 +52,21 @@ export const MapLibreMap = () => {
     setClickPoint(new LngLat(e.lngLat.lng, e.lngLat.lat));
     
     const bygningResponse = await getBygningAtPunkt(e.lngLat.lng, e.lngLat.lat)
-    console.log(bygningResponse)
+    console.log(bygningResponse?.Bygninger[0].FkbData?.BygningsOmriss)
     
-    if (bygningResponse?.FkbData?.BygningsOmriss) {
-        const geoJsonObject = JSON.parse(bygningResponse.FkbData.BygningsOmriss);
+    if (bygningResponse?.Bygninger) {
+        const geoJsonObject = JSON.parse(bygningResponse?.Bygninger[0].FkbData?.BygningsOmriss);
+        console.log("Geojson obj: ", geoJsonObject);
+
         setBygningsOmriss(geoJsonObject);
-        console.log(geoJsonObject);
 
     } else {
         setBygningsOmriss(undefined);
     }
   };
+
+  console.log("Omris : ", bygningsOmriss);
+  
 
   const polygonStyle = {
     "fill-outline-color": "rgba(0,0,0,0.1)",
@@ -112,7 +116,7 @@ export const MapLibreMap = () => {
             />
          </>
       }
-      <DrawComponent />
+      <DrawComponent  />
       
     </RMap>
   );
